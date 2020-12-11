@@ -1,5 +1,6 @@
 package com.example.mail.controller;
 
+import com.example.mail.service.Email;
 import com.example.mail.service.MailService;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,30 +29,28 @@ public class MailController {
         return MailService.getLoginInfo(loginInfo);
     }
 
-    @PostMapping("receiveExternalMail")
-    public Object receiveExternalMail(@RequestBody ExternalMailRequest externalMailRequest,
-                                      @RequestHeader("api-key") String key) {
-        return null;
-    }
-
     @PostMapping("/send")
     public Object send(@RequestBody SendMailRequest sendMailRequest) {
-        mailService.sendEmail(sendMailRequest);
-        return null;
+        return mailService.sendEmail(sendMailRequest);
     }
 
-    //retrieve email -> POST /api/v1/email/inbox
     @PostMapping("/inbox")
-    public ArrayList<SendMailRequest> getInbox(@RequestBody UUID primaryKey)
+    public ArrayList<Email> getInbox(@RequestBody UUID primaryKey)
     {
         return mailService.returnInbox(primaryKey);
     }
 
     @ResponseBody
     @PostMapping("/outbox")
-    public ArrayList<SendMailRequest> getOutbox(@RequestBody UUID primaryKey)
+    public ArrayList<Email> getOutbox(@RequestBody UUID primaryKey)
     {
         return mailService.returnOutbox(primaryKey);
+    }
+
+    @PostMapping("receiveExternalMail")
+    public Object receiveExternalMail(@RequestBody ExternalMailRequest externalMailRequest,
+                                      @RequestHeader("api-key") String key) {
+        return null;
     }
 }
 

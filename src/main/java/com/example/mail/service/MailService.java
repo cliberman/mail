@@ -53,7 +53,7 @@ public class MailService {
 
 //    private final SendMailRequest sendMailRequest;
 
-    public void sendEmail(SendMailRequest sendMailRequest) throws HttpClientErrorException {
+    public Object sendEmail(SendMailRequest sendMailRequest) throws HttpClientErrorException {
         LoginInfo from = validateFrom(sendMailRequest.getFrom());
 
         //go through usermap and find the to's full object
@@ -81,6 +81,7 @@ public class MailService {
                             .to(sendMailRequest.getTo())
                     .message(sendMailRequest.getMessage())
                     .build());
+            return HttpStatus.OK;
 
         } catch (Exception e) {
 //            ExternalMailRequest body = ExternalMailRequest.builder()
@@ -89,18 +90,7 @@ public class MailService {
 //                    .message(sendMailRequest.getMessage())
 //                    .build();
             System.out.println(e);
-//
-//            String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
-//            HttpHeaders headers = new HttpHeaders();
-//            headers.add("api-key", headerValue);
-//            //HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
-//
-//            ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() + "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
-//
-//            if(response.getStatusCode() != HttpStatus.OK) {
-//                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
-//            }
-
+            return HttpStatus.BAD_REQUEST;
         }
     }
 
@@ -122,34 +112,55 @@ public class MailService {
         return user;
     }
 
-    public ArrayList<SendMailRequest> returnInbox(UUID primaryKey) {
+    public ArrayList<Email> returnInbox(UUID primaryKey) {
         LoginInfo user = Users.userMap.entrySet().stream()
                 .filter(e -> primaryKey.equals(e.getValue()))
                 .findFirst()
                 .orElseThrow(() -> new NullPointerException("No user"))
                 .getKey();
-        ArrayList receivedMessages = user.getInbox();
+
+        ArrayList<Email> receivedMessages = new ArrayList<Email>();
+        //iterate through inbox
+        ArrayList<SendMailRequest> inbox = user.getInbox();
+
+        for (SendMailRequest msg : inbox) {
+            UUID from = inbox[msg].getValue();
+            String sender = Users.userMap.entrySet().stream()
+                    .filter(e -> from.equals(e.getValue()))
+                    .findFirst()
+                    .orElseThrow(() -> new NullPointerException("No user"))
+                    .getKey()
+                    .getUsername();
+            receivedMessages.add(new Email("from: " + sender, "message: " +
+                    inbox[msg].getMessage()));
+        }
         return receivedMessages;
     }
 
-    public ArrayList<SendMailRequest> returnOutbox(UUID primaryKey) {
+    public ArrayList<Email> returnOutbox(UUID primaryKey) {
         LoginInfo user = Users.userMap.entrySet().stream()
                 .filter(e -> primaryKey.equals(e.getValue()))
                 .findFirst()
                 .orElseThrow(() -> new NullPointerException("No user"))
                 .getKey();
-        ArrayList sentMessages = user.getOutbox();
+
+        ArrayList<Email> sentMessages = new ArrayList<Email>();
+        //iterate through outbox
+        ArrayList<SendMailRequest> outbox = user.getOutbox();
+        for (SendMailRequest msg : outbox) {
+            sentMessages.add(new Email("to: " + outbox[msg].getTo(), "message: " +
+                    outbox[msg].getMessage()));
+        }
         return sentMessages;
+        //        String sender = user.getUsername();
+//the outbox is an ArrayList of sendMailRequests?
+//        ArrayList<SendMailRequest> outbox = user.getOutbox();
+//
+//        ArrayList<Object> sentMessages = outbox.stream()
+//                .filter(e -> sender.equals(e.getFrom()))
+//                .forEach(user.);
     }
 }
-
-
-
-//2. Send email -> POST /api/v1/email/send
-//The post body should include the senders primary key (they got it from step 1), the username of the recipient,
-// and the message, in JSON.
-// If the username exists, then this should be saved to to the array of emails. (to, from, message).
-// Remember that both to and from should be UUIDs, neither should be usernames.
 
 /*3. retrieve email -> POST /api/v1/email/inbox
 The post body should include the primary key of the user. Retrieve only that user's e-mails (the ones TO that user).
@@ -158,6 +169,35 @@ and message.
 
 4. retrieve outbox -> POST /api/v1/email/outbox
 The post body should include the primary key of the user. Retrieve only that user's sent e-mails
-(the ones FROM that user). Json response body should be and array of objects, and each object should include
+(the ones FROM that user). Json response body should be an array of objects, and each object should include
 a 'to' (username, not key), and message.
 */
+
+    public Object receiveEmail(ExternalMailRequest externalMailRequest, String keyValue) throws HttpClientErrorException {
+        LoginInfo from = validateFrom(externalMailRequest.getFrom());
+        String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("api-key", headerValue);
+        ExternalMailRequest body = ExternalMailRequest.builder();
+        HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
+        ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() +
+                "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
+        if(response.getStatusCode() != HttpStatus.OK) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+
+
+        } catch (Exception e) {
+//            ExternalMailRequest body = ExternalMailRequest.builder()
+//                    .from(from)
+//                    .to(sendMailRequest.getTo())
+//                    .message(sendMailRequest.getMessage())
+//                    .build();
+            System.out.println(e);
+            return HttpStatus.BAD_REQUEST;
+        }
+        return null;
+    }
+}
