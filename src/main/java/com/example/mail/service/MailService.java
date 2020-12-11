@@ -124,15 +124,15 @@ public class MailService {
         ArrayList<SendMailRequest> inbox = user.getInbox();
 
         for (SendMailRequest msg : inbox) {
-            UUID from = inbox[msg].getValue();
+            UUID from = msg.getFrom();
             String sender = Users.userMap.entrySet().stream()
-                    .filter(e -> from.equals(e.getValue()))
+                    .filter(e -> from.equals(e.getKey().getUsername()))
                     .findFirst()
                     .orElseThrow(() -> new NullPointerException("No user"))
                     .getKey()
                     .getUsername();
             receivedMessages.add(new Email("from: " + sender, "message: " +
-                    inbox[msg].getMessage()));
+                    msg.getMessage()));
         }
         return receivedMessages;
     }
@@ -148,8 +148,8 @@ public class MailService {
         //iterate through outbox
         ArrayList<SendMailRequest> outbox = user.getOutbox();
         for (SendMailRequest msg : outbox) {
-            sentMessages.add(new Email("to: " + outbox[msg].getTo(), "message: " +
-                    outbox[msg].getMessage()));
+            sentMessages.add(new Email("to: " + msg.getTo(), "message: " +
+                    msg.getMessage()));
         }
         return sentMessages;
         //        String sender = user.getUsername();
@@ -173,31 +173,31 @@ The post body should include the primary key of the user. Retrieve only that use
 a 'to' (username, not key), and message.
 */
 
-    public Object receiveEmail(ExternalMailRequest externalMailRequest, String keyValue) throws HttpClientErrorException {
-        LoginInfo from = validateFrom(externalMailRequest.getFrom());
-        String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("api-key", headerValue);
-        ExternalMailRequest body = ExternalMailRequest.builder();
-        HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
-        ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() +
-                "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
-        if(response.getStatusCode() != HttpStatus.OK) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
-        }
-
-        try {
-
-
-        } catch (Exception e) {
-//            ExternalMailRequest body = ExternalMailRequest.builder()
-//                    .from(from)
-//                    .to(sendMailRequest.getTo())
-//                    .message(sendMailRequest.getMessage())
-//                    .build();
-            System.out.println(e);
-            return HttpStatus.BAD_REQUEST;
-        }
-        return null;
-    }
-}
+//    public Object receiveEmail(ExternalMailRequest externalMailRequest, String keyValue) throws HttpClientErrorException {
+//        LoginInfo from = validateFrom(externalMailRequest.getFrom());
+//        String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.add("api-key", headerValue);
+//        ExternalMailRequest body = ExternalMailRequest.builder();
+//        HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
+//        ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() +
+//                "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
+//        if(response.getStatusCode() != HttpStatus.OK) {
+//            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+//        }
+//
+//        try {
+//
+//
+//        } catch (Exception e) {
+////            ExternalMailRequest body = ExternalMailRequest.builder()
+////                    .from(from)
+////                    .to(sendMailRequest.getTo())
+////                    .message(sendMailRequest.getMessage())
+////                    .build();
+//            System.out.println(e);
+//            return HttpStatus.BAD_REQUEST;
+//        }
+//        return null;
+//    }
+//}
