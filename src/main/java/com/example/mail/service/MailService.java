@@ -112,9 +112,9 @@ public class MailService {
         return user;
     }
 
-    public ArrayList<Email> returnInbox(UUID primaryKey) {
+    public ArrayList<Email> returnInbox(String primaryKey) {
         LoginInfo user = Users.userMap.entrySet().stream()
-                .filter(e -> primaryKey.equals(e.getValue()))
+                .filter(e -> primaryKey.equals(e.getValue().toString()))
                 .findFirst()
                 .orElseThrow(() -> new NullPointerException("No user"))
                 .getKey();
@@ -126,7 +126,7 @@ public class MailService {
         for (SendMailRequest msg : inbox) {
             UUID from = msg.getFrom();
             String sender = Users.userMap.entrySet().stream()
-                    .filter(e -> from.equals(e.getKey().getUsername()))
+                    .filter(e -> from.equals(e.getValue()))
                     .findFirst()
                     .orElseThrow(() -> new NullPointerException("No user"))
                     .getKey()
@@ -137,9 +137,9 @@ public class MailService {
         return receivedMessages;
     }
 
-    public ArrayList<Email> returnOutbox(UUID primaryKey) {
+    public ArrayList<Email> returnOutbox(String primaryKey) {
         LoginInfo user = Users.userMap.entrySet().stream()
-                .filter(e -> primaryKey.equals(e.getValue()))
+                .filter(e -> primaryKey.equals(e.getValue().toString()))
                 .findFirst()
                 .orElseThrow(() -> new NullPointerException("No user"))
                 .getKey();

@@ -35,14 +35,14 @@ public class MailController {
     }
 
     @PostMapping("/inbox")
-    public ArrayList<Email> getInbox(@RequestBody UUID primaryKey)
+    public ArrayList<Email> getInbox(@RequestBody String primaryKey)
     {
         return mailService.returnInbox(primaryKey);
     }
 
     @ResponseBody
     @PostMapping("/outbox")
-    public ArrayList<Email> getOutbox(@RequestBody UUID primaryKey)
+    public ArrayList<Email> getOutbox(@RequestBody String primaryKey)
     {
         return mailService.returnOutbox(primaryKey);
     }
