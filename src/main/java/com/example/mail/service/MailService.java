@@ -45,14 +45,6 @@ public class MailService {
         }
     }
 
-
-//    public boolean send() {
-//    LoginInfo.EMAILS.add(Email.builder().build());
-//    return true;
-//    }
-
-//    private final SendMailRequest sendMailRequest;
-
     public Object sendEmail(SendMailRequest sendMailRequest) throws HttpClientErrorException {
         LoginInfo from = validateFrom(sendMailRequest.getFrom());
 
@@ -84,11 +76,6 @@ public class MailService {
             return HttpStatus.OK;
 
         } catch (Exception e) {
-//            ExternalMailRequest body = ExternalMailRequest.builder()
-//                    .from(from)
-//                    .to(sendMailRequest.getTo())
-//                    .message(sendMailRequest.getMessage())
-//                    .build();
             System.out.println(e);
             return HttpStatus.BAD_REQUEST;
         }
@@ -152,52 +139,41 @@ public class MailService {
                     msg.getMessage()));
         }
         return sentMessages;
-        //        String sender = user.getUsername();
-//the outbox is an ArrayList of sendMailRequests?
-//        ArrayList<SendMailRequest> outbox = user.getOutbox();
-//
-//        ArrayList<Object> sentMessages = outbox.stream()
-//                .filter(e -> sender.equals(e.getFrom()))
-//                .forEach(user.);
+    }
+
+    public Object receiveEmail(ExternalMailRequest externalMailRequest, String keyValue) throws HttpClientErrorException {
+        LoginInfo from = validateFrom(externalMailRequest.getFrom());
+        String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("api-key", headerValue);
+        ExternalMailRequest body = ExternalMailRequest.builder()
+                .from(externalMailRequest.getFrom())
+                .to(externalMailRequest.getTo())
+                .message(externalMailRequest.getMessage())
+                .build();
+        HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
+        ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() +
+                "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
+        if(response.getStatusCode() != HttpStatus.OK) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            //need to fill in
+        } catch (Exception e) {
+            System.out.println(e);
+            return HttpStatus.BAD_REQUEST;
+        }
+        return null;
     }
 }
+/*Return 200 (ok) if the "to" user exists and we saved the email successfully to the inbox.
+  Return 400 (bad request) if the "to" user does not exist
+  There should be a feature switch on this guy as well, and you should return a 503 service unavailable if the endpoint
+  is turned off.*/
 
-/*3. retrieve email -> POST /api/v1/email/inbox
-The post body should include the primary key of the user. Retrieve only that user's e-mails (the ones TO that user).
-Json response body should be an array of objects, and each object should include a 'from' (username, not key),
-and message.
 
-4. retrieve outbox -> POST /api/v1/email/outbox
-The post body should include the primary key of the user. Retrieve only that user's sent e-mails
-(the ones FROM that user). Json response body should be an array of objects, and each object should include
-a 'to' (username, not key), and message.
-*/
-
-//    public Object receiveEmail(ExternalMailRequest externalMailRequest, String keyValue) throws HttpClientErrorException {
-//        LoginInfo from = validateFrom(externalMailRequest.getFrom());
-//        String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.add("api-key", headerValue);
-//        ExternalMailRequest body = ExternalMailRequest.builder();
-//        HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
-//        ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() +
-//                "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
-//        if(response.getStatusCode() != HttpStatus.OK) {
-//            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
-//        }
-//
-//        try {
-//
-//
-//        } catch (Exception e) {
-////            ExternalMailRequest body = ExternalMailRequest.builder()
-////                    .from(from)
-////                    .to(sendMailRequest.getTo())
-////                    .message(sendMailRequest.getMessage())
-////                    .build();
-//            System.out.println(e);
-//            return HttpStatus.BAD_REQUEST;
-//        }
-//        return null;
-//    }
-//}
+//            ExternalMailRequest body = ExternalMailRequest.builder()
+//                    .from(from)
+//                    .to(sendMailRequest.getTo())
+//                    .message(sendMailRequest.getMessage())
+//                    .build();
