@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties("mail.external")
 
 public class ExternalMailConfiguration {
-    private String url;
+    private String url = "https://ti-timeserver.herokuapp.com/api/v1/email/receiveExternalMail";
     private String key;
     private String ip;
 }

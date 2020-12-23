@@ -7,6 +7,7 @@ import com.example.mail.controller.LoginInfo;
 import com.example.mail.controller.SendMailRequest;
 import lombok.Builder;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -19,25 +20,25 @@ import java.util.UUID;
 @Builder
 @Service
 @Data
-
+@RequiredArgsConstructor
 public class MailService {
 
     private final RestTemplate restTemplate;
     private static ExternalMailConfiguration externalMailConfiguration;
     private static FeatureSwitchConfiguration featureSwitchConfiguration;
     //constructor
-    public MailService(RestTemplate restTemplate, ExternalMailConfiguration externalMailConfiguration, FeatureSwitchConfiguration featureSwitchConfiguration) {
-        this.restTemplate = restTemplate;
-        this.externalMailConfiguration = externalMailConfiguration;
-        this.featureSwitchConfiguration = featureSwitchConfiguration;
-    }
+//    public MailService(RestTemplate restTemplate, ExternalMailConfiguration externalMailConfiguration, FeatureSwitchConfiguration featureSwitchConfiguration) {
+//        this.restTemplate = restTemplate;
+//        this.externalMailConfiguration = externalMailConfiguration;
+//        this.featureSwitchConfiguration = featureSwitchConfiguration;
+//    }
 
     //login-done
     public static UUID getLoginInfo(LoginInfo loginInfo) {
 
-        if(featureSwitchConfiguration.isPrintIp()) {
-            System.out.println("very complex code: " + externalMailConfiguration.getIp());
-        }
+//        if(featureSwitchConfiguration.isPrintIp()) {
+//            System.out.println("very complex code: " + externalMailConfiguration.getIp());
+//        }
 
 
         Map.Entry<LoginInfo, UUID> user = Users.userMap.entrySet().stream()
@@ -59,7 +60,7 @@ public class MailService {
             LoginInfo to = Users.userMap.entrySet().stream()
                     .filter(e -> sendMailRequest.getTo().equals(e.getKey().getUsername()))
                     .findFirst()
-                    .orElseThrow(() -> new NullPointerException("No user"))
+                    .orElseThrow(() -> new Exception())
                     .getKey();
 
             //add the to, from, and message to the receiver's inbox
@@ -85,8 +86,9 @@ public class MailService {
             //System.out.println(e);
             //return HttpStatus.BAD_REQUEST;
             //RestTemplate restTemplate = new RestTemplate();
-            String output = restTemplate.exchange(externalMailConfiguration.getUrl() + sendMailRequest,
-                    HttpMethod.GET,
+            HttpEntity<SendMailRequest> httpEntity = new HttpEntity<>(sendMailRequest);
+            String output = restTemplate.exchange(externalMailConfiguration.getUrl() /*+ sendMailRequest*/,
+                    HttpMethod.POST,
                     null,
                     String.class).getBody();
             return output;
