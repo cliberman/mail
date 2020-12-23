@@ -6,7 +6,7 @@ server:
 #    ip: 192.168.0.1
 mail:
   external:
-    url: https://ti-timeserver.herokuapp.com/api/v1/email/receiveExternalMail
+    url: ti-timeserver.herokuapp.com
     key: letMeIn
 
 featureswitch:

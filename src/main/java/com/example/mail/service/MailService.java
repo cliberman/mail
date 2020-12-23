@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -60,8 +61,10 @@ public class MailService {
             LoginInfo to = Users.userMap.entrySet().stream()
                     .filter(e -> sendMailRequest.getTo().equals(e.getKey().getUsername()))
                     .findFirst()
-                    .orElseThrow(() -> new Exception())
+                    .get()
                     .getKey();
+                    //.orElseThrow(() -> new Exception())
+                    //.getKey();
 
             //add the to, from, and message to the receiver's inbox
             to.getInbox().add(
@@ -80,20 +83,36 @@ public class MailService {
                             .to(sendMailRequest.getTo())
                     .message(sendMailRequest.getMessage())
                     .build());
-            return HttpStatus.OK;
+            return ResponseEntity.ok();
 
+            //send the email to the external server because the recipient was not found locally:
         } catch (Exception e) {
             //System.out.println(e);
             //return HttpStatus.BAD_REQUEST;
             //RestTemplate restTemplate = new RestTemplate();
-            HttpEntity<SendMailRequest> httpEntity = new HttpEntity<>(sendMailRequest);
-            String output = restTemplate.exchange(externalMailConfiguration.getUrl() /*+ sendMailRequest*/,
-                    HttpMethod.POST,
-                    null,
-                    String.class).getBody();
-            return output;
+            ExternalMailRequest body = ExternalMailRequest.builder()
+                    .from(sendMailRequest.getFrom())
+                    .to(sendMailRequest.getTo())
+                    .message(sendMailRequest.getMessage())
+                    .build();
+            String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
+            HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headerValue);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("api-key", headerValue);
+
+
+            try {
+                ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() + "/api/v1/email/receiveExternalMail",
+                        HttpMethod.POST,
+                        httpEntity,
+                        Void.class);
+            } catch (HttpStatusCodeException a) {
+                return ResponseEntity.badRequest();
+            }
+            return ResponseEntity.ok();
         }
     }
+
     /*  2. Modify our send endpoint:
         When a user sends an email, if the "to" address does not exists, today we reject it.
         We should modify this, so that if the to address does not exist, we should send that email to our external Email
