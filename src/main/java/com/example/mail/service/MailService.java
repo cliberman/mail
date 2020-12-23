@@ -1,13 +1,12 @@
 package com.example.mail.service;
 
-import com.example.mail.controller.ExternalMailConfiguration;
+import com.example.mail.config.ExternalMailConfiguration;
+import com.example.mail.config.FeatureSwitchConfiguration;
 import com.example.mail.controller.ExternalMailRequest;
 import com.example.mail.controller.LoginInfo;
 import com.example.mail.controller.SendMailRequest;
 import lombok.Builder;
 import lombok.Data;
-import lombok.extern.java.Log;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -24,16 +23,23 @@ import java.util.UUID;
 public class MailService {
 
     private final RestTemplate restTemplate;
-    private final ExternalMailConfiguration externalMailConfiguration;
-
+    private static ExternalMailConfiguration externalMailConfiguration;
+    private static FeatureSwitchConfiguration featureSwitchConfiguration;
     //constructor
-    public MailService(RestTemplate restTemplate, ExternalMailConfiguration externalMailConfiguration) {
+    public MailService(RestTemplate restTemplate, ExternalMailConfiguration externalMailConfiguration, FeatureSwitchConfiguration featureSwitchConfiguration) {
         this.restTemplate = restTemplate;
         this.externalMailConfiguration = externalMailConfiguration;
+        this.featureSwitchConfiguration = featureSwitchConfiguration;
     }
 
     //login-done
     public static UUID getLoginInfo(LoginInfo loginInfo) {
+
+        if(featureSwitchConfiguration.isPrintIp()) {
+            System.out.println("very complex code: " + externalMailConfiguration.getIp());
+        }
+
+
         Map.Entry<LoginInfo, UUID> user = Users.userMap.entrySet().stream()
                 .filter(e -> loginInfo.getUsername().equals(e.getKey().getUsername()))
                 .findFirst()
@@ -76,10 +82,25 @@ public class MailService {
             return HttpStatus.OK;
 
         } catch (Exception e) {
-            System.out.println(e);
-            return HttpStatus.BAD_REQUEST;
+            //System.out.println(e);
+            //return HttpStatus.BAD_REQUEST;
+            //RestTemplate restTemplate = new RestTemplate();
+            String output = restTemplate.exchange(externalMailConfiguration.getUrl() + sendMailRequest,
+                    HttpMethod.GET,
+                    null,
+                    String.class).getBody();
+            return output;
         }
     }
+    /*  2. Modify our send endpoint:
+        When a user sends an email, if the "to" address does not exists, today we reject it.
+        We should modify this, so that if the to address does not exist, we should send that email to our external Email
+        server. If that is successful, great, we are done. (There will be a bug here, that this email will not show up in the outbox).
+        If we receive a 400 error from the external server, that means the user doesn't exist either on our server, or
+        externally, we should return the same error we return today for recipient does not exist.
+        Hint: You will need to use RestTemplate to send external API calls.
+        The address of the external server must be in configuration. https://ti-timeserver.herokuapp.com/api/v1/email/receiveExternalMail
+        There should be a feature switch to turn off sending externally. In this case, we would just say the user does not exist. */
 
     public LoginInfo validateFrom(UUID from) {
         LoginInfo user;
@@ -141,22 +162,32 @@ public class MailService {
         return sentMessages;
     }
 
+//externalMailRequest has a UUID from, string to, and string message
     public Object receiveEmail(ExternalMailRequest externalMailRequest, String keyValue) throws HttpClientErrorException {
+        //validate the from:
         LoginInfo from = validateFrom(externalMailRequest.getFrom());
+        String fromUsername = from.getUsername();
+
+        //what is this doing?
         String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
         HttpHeaders headers = new HttpHeaders();
         headers.add("api-key", headerValue);
+
         ExternalMailRequest body = ExternalMailRequest.builder()
                 .from(externalMailRequest.getFrom())
                 .to(externalMailRequest.getTo())
                 .message(externalMailRequest.getMessage())
                 .build();
+
         HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
+
         ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() +
                 "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
+
         if(response.getStatusCode() != HttpStatus.OK) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
         }
+
         try {
             //need to fill in
         } catch (Exception e) {
@@ -166,14 +197,15 @@ public class MailService {
         return null;
     }
 }
-/*Return 200 (ok) if the "to" user exists and we saved the email successfully to the inbox.
-  Return 400 (bad request) if the "to" user does not exist
-  There should be a feature switch on this guy as well, and you should return a 503 service unavailable if the endpoint
-  is turned off.*/
-
+/*1. Return 200 (ok) if the "to" user exists and we saved the email successfully to the inbox.
+     Return 400 (bad request) if the "to" user does not exist
+     There should be a feature switch on this guy as well, and you should return a 503 service unavailable if the endpoint
+     is turned off.*/
 
 //            ExternalMailRequest body = ExternalMailRequest.builder()
 //                    .from(from)
 //                    .to(sendMailRequest.getTo())
 //                    .message(sendMailRequest.getMessage())
 //                    .build();
+
+

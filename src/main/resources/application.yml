@@ -3,9 +3,12 @@ server:
 
 #mail:
 #  external:
-#    url: ti-timeservernew.herokuapp.com
-#    key: letMeIn
-#
-#featureSwitch:
-#  printIP: true
-#  emailIP: true
+#    ip: 192.168.0.1
+mail:
+  external:
+    url: https://ti-timeserver.herokuapp.com/api/v1/email/receiveExternalMail
+    key: letMeIn
+
+featureswitch:
+  printIp: true
+  emailUp: true

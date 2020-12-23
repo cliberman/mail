@@ -1,7 +1,11 @@
 package com.example.mail.controller;
 
+import com.example.mail.config.ExternalMailConfiguration;
+import com.example.mail.config.FeatureSwitchConfiguration;
 import com.example.mail.service.Email;
 import com.example.mail.service.MailService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -14,18 +18,21 @@ import java.util.UUID;
 public class MailController {
     private final MailService mailService;
     private final ExternalMailConfiguration externalMailConfiguration;
-    //private final FeatureSwitchConfiguration featureSwitchConfiguration;
+    private final FeatureSwitchConfiguration featureSwitchConfiguration;
     private final SendMailRequest sendMailRequest;
 
-    public MailController(MailService mailService, ExternalMailConfiguration externalMailConfiguration, SendMailRequest sendMailRequest) {
+    public MailController(MailService mailService, ExternalMailConfiguration externalMailConfiguration, FeatureSwitchConfiguration featureSwitchConfiguration, SendMailRequest sendMailRequest) {
         this.mailService = mailService;
         this.externalMailConfiguration = externalMailConfiguration;
-        //this.featureSwitchConfiguration = featureSwitchConfiguration;
+        this.featureSwitchConfiguration = featureSwitchConfiguration;
         this.sendMailRequest = sendMailRequest;
     }
 
     @PostMapping("/login")
     public UUID getLogin(@RequestBody LoginInfo loginInfo) {
+//        if (featureSwitchConfiguration.isEmailUp()) {
+//            return new ResponseEntity<>("Sorry, our server is down right now", HttpStatus.UNAUTHORIZED);
+//        }
         return MailService.getLoginInfo(loginInfo);
     }
 
@@ -50,7 +57,7 @@ public class MailController {
     @PostMapping("receiveExternalMail")
     public Object receiveExternalMail(@RequestBody ExternalMailRequest externalMailRequest,
                                       @RequestHeader("api-key") String key) {
-        return null;
+        return mailService.receiveEmail(externalMailRequest, key);
     }
 }
 
