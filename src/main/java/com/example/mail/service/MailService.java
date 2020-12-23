@@ -83,7 +83,7 @@ public class MailService {
                             .to(sendMailRequest.getTo())
                     .message(sendMailRequest.getMessage())
                     .build());
-            return ResponseEntity.ok();
+            return new ResponseEntity<>(HttpStatus.OK);
 
             //send the email to the external server because the recipient was not found locally:
         } catch (Exception e) {
@@ -107,9 +107,9 @@ public class MailService {
                         httpEntity,
                         Void.class);
             } catch (HttpStatusCodeException a) {
-                return ResponseEntity.badRequest();
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            return ResponseEntity.ok();
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
