@@ -46,8 +46,8 @@ public class MailService {
                 .filter(e -> loginInfo.getUsername().equals(e.getKey().getUsername()))
                 .findFirst()
                 .orElseThrow(() -> new NullPointerException("No user"));
-        if(loginInfo.getPassword().equals(user.getKey().getPassword())) {
-            return(user.getValue());
+        if (loginInfo.getPassword().equals(user.getKey().getPassword())) {
+            return (user.getValue());
         } else {
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
         }
@@ -63,8 +63,8 @@ public class MailService {
                     .findFirst()
                     .get()
                     .getKey();
-                    //.orElseThrow(() -> new Exception())
-                    //.getKey();
+            //.orElseThrow(() -> new Exception())
+            //.getKey();
 
             //add the to, from, and message to the receiver's inbox
             to.getInbox().add(
@@ -78,11 +78,11 @@ public class MailService {
             //add the to, from, and message to the sender's outbox
             from.getOutbox().add(
                     SendMailRequest.builder()
-                    .from(sendMailRequest.getFrom())
-                    //.to(to.getUsername())
+                            .from(sendMailRequest.getFrom())
+                            //.to(to.getUsername())
                             .to(sendMailRequest.getTo())
-                    .message(sendMailRequest.getMessage())
-                    .build());
+                            .message(sendMailRequest.getMessage())
+                            .build());
             return new ResponseEntity<>(HttpStatus.OK);
 
             //send the email to the external server because the recipient was not found locally:
@@ -183,39 +183,32 @@ public class MailService {
         return sentMessages;
     }
 
-//externalMailRequest has a UUID from, string to, and string message
+    //externalMailRequest has a UUID from, string to, and string message
     public Object receiveEmail(ExternalMailRequest externalMailRequest, String keyValue) throws HttpClientErrorException {
-        //validate the from:
-        LoginInfo from = validateFrom(externalMailRequest.getFrom());
-        String fromUsername = from.getUsername();
+        //check for the correct key
+        String header = new String(Base64.getDecoder().decode(keyValue));
+        if (header.equals(externalMailConfiguration.getKey())) {
 
-        //what is this doing?
-        String headerValue = new String(Base64.getEncoder().encode(externalMailConfiguration.getKey().getBytes()));
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("api-key", headerValue);
+            //validate the from:
+            LoginInfo from = validateFrom(externalMailRequest.getFrom());
 
-        ExternalMailRequest body = ExternalMailRequest.builder()
-                .from(externalMailRequest.getFrom())
-                .to(externalMailRequest.getTo())
-                .message(externalMailRequest.getMessage())
-                .build();
+            //add the email to the recipient's inbox:
+            LoginInfo to = Users.userMap.entrySet().stream()
+                    .filter(e -> externalMailRequest.getTo().equals(e.getKey().getUsername()))
+                    .findFirst()
+                    .get()
+                    .getKey();
+            to.getInbox().add(
+                    SendMailRequest.builder()
+                            .from(externalMailRequest.getFrom())
+                            .to(externalMailRequest.getTo())
+                            .message(externalMailRequest.getMessage())
+                            .build());
+            return HttpStatus.OK;
 
-        HttpEntity<ExternalMailRequest> httpEntity = new HttpEntity<>(body, headers);
-
-        ResponseEntity<Void> response = restTemplate.exchange("https://" + externalMailConfiguration.getUrl() +
-                "/api/v1/email/receiveExternalMail", HttpMethod.POST, httpEntity, Void.class);
-
-        if(response.getStatusCode() != HttpStatus.OK) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        } else {
+            return HttpStatus.UNAUTHORIZED;
         }
-
-        try {
-            //need to fill in
-        } catch (Exception e) {
-            System.out.println(e);
-            return HttpStatus.BAD_REQUEST;
-        }
-        return null;
     }
 }
 /*1. Return 200 (ok) if the "to" user exists and we saved the email successfully to the inbox.
@@ -223,10 +216,8 @@ public class MailService {
      There should be a feature switch on this guy as well, and you should return a 503 service unavailable if the endpoint
      is turned off.*/
 
-//            ExternalMailRequest body = ExternalMailRequest.builder()
-//                    .from(from)
-//                    .to(sendMailRequest.getTo())
-//                    .message(sendMailRequest.getMessage())
-//                    .build();
+
+
+
 
 
