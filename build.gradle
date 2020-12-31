@@ -16,15 +16,25 @@ configurations {
 
 repositories {
 	mavenCentral()
+	flatDir() {
+		dirs 'libs'
+	}
 }
 
 dependencies {
+	compileOnly 'org.example:manualDocumentation:1.0-SNAPSHOT'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
+	// https://mvnrepository.com/artifact/io.springfox/springfox-swagger2
+	compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.9.2'
+	// https://mvnrepository.com/artifact/io.springfox/springfox-swagger-ui
+	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.9.2'
+
 }
 
 test {

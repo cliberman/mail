@@ -4,6 +4,7 @@ import com.example.mail.config.ExternalMailConfiguration;
 import com.example.mail.config.FeatureSwitchConfiguration;
 import com.example.mail.service.Email;
 import com.example.mail.service.MailService;
+import io.swagger.annotations.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,9 @@ public class MailController {
         this.sendMailRequest = sendMailRequest;
     }
 
+    @ApiOperation(notes = "test notes", value = "this is a value")
+    @ApiResponses(value = {@ApiResponse(code=200, message="ok", response=String.class, examples = @Example(value = @ExampleProperty(mediaType = "UUID", value = "1234"))),
+            @ApiResponse(code=401, message="unauthorized", response = String.class)})
     @PostMapping("/login")
     public UUID getLogin(@RequestBody LoginInfo loginInfo) {
 //        if (featureSwitchConfiguration.isEmailUp()) {
